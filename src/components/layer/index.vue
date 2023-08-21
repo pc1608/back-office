@@ -1,5 +1,5 @@
 <template>
-  <div v-drag="layer.show">
+  <div >
     <el-dialog
       v-model="layer.show"
       :title="layer.title"
@@ -19,7 +19,7 @@
 
 <script lang="js">
 import { defineComponent } from 'vue'
-import drag from '@/directive/drag/index'
+// import drag from '@/directive/drag/index'
 export default defineComponent({
   props: {
     layer: {
@@ -35,7 +35,7 @@ export default defineComponent({
     }
   },
   directives: {
-    drag
+    // drag
   },
   setup(props, ctx) {
     function confirm() {

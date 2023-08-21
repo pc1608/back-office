@@ -19,18 +19,12 @@
       </el-header>
       <Tabs v-show="showTabs" />
       <el-main>
-        <router-view v-slot="{ Component, route }">
+        <router-view v-slot="{ Component, route }" v-if="globalStore.routerActive">
           <transition
             :name="route.meta.transition || 'fade-transform'"
             mode="out-in"
           >
-            <keep-alive
-              v-if="keepAliveComponentsName"
-              :include="keepAliveComponentsName"
-            >
-              <component :is="Component" :key="route.fullPath" />
-            </keep-alive>
-            <component v-else :is="Component" :key="route.fullPath" />
+            <component :is="Component" :key="route.fullPath" />
           </transition>
         </router-view>
       </el-main>
@@ -38,60 +32,41 @@
   </el-container>
 </template>
 
-<script lang="js">
-import { defineComponent, computed, onBeforeMount } from "vue";
-import { useStore } from "vuex";
-import { useRouter } from "vue-router";
+<script lang="js" setup>
+import { onBeforeMount,computed  } from "vue";
 import { useEventListener } from "@vueuse/core";
 import Menu from "./Menu/index.vue";
 import Logo from "./Logo/index.vue";
 import Header from "./Header/index.vue";
 import Tabs from "./Tabs/index.vue";
-export default defineComponent({
-  components: {
-    Menu,
-    Logo,
-    Header,
-    Tabs,
-  },
-  setup() {
-    const store = useStore();
-    // computed
-    const isCollapse = computed(() => store.state.app.isCollapse);
-    const contentFullScreen = computed(() => store.state.app.contentFullScreen);
-    const showLogo = computed(() => store.state.app.showLogo);
-    const showTabs = computed(() => store.state.app.showTabs);
-    const keepAliveComponentsName = computed(() => store.getters['keepAlive/keepAliveComponentsName']);
-    // 页面宽度变化监听后执行的方法
-    const resizeHandler = () => {
-      if (document.body.clientWidth <= 1000 && !isCollapse.value) {
-        store.commit("app/isCollapseChange", true);
-      } else if (document.body.clientWidth > 1000 && isCollapse.value) {
-        store.commit("app/isCollapseChange", false);
-      }
-    };
-    // 初始化调用
-    resizeHandler();
-    // beforeMount
-    onBeforeMount(() => {
-      // 监听页面变化
-      useEventListener("resize", resizeHandler);
-    });
-    // methods
-    // 隐藏菜单
-    const hideMenu = () => {
-      store.commit("app/isCollapseChange", true);
-    };
-    return {
-      isCollapse,
-      showLogo,
-      showTabs,
-      contentFullScreen,
-      keepAliveComponentsName,
-      hideMenu,
-    };
-  },
+import {useGlobalStore} from "@/stores/modules/global";
+const globalStore = useGlobalStore()
+// computed
+const isCollapse = computed(() => globalStore.isCollapse)
+const contentFullScreen = computed(()=>globalStore.maxSize)
+const showLogo = computed(()=>globalStore.showLogo)
+const showTabs = computed(()=>globalStore.showTabs)
+// const keepAliveComponentsName = computed(() => store.getters['keepAlive/keepAliveComponentsName']);
+// 页面宽度变化监听后执行的方法
+const resizeHandler = () => {
+  if (document.body.clientWidth <= 1000 && !isCollapse.value) {
+    globalStore.changeCollapse(true)
+  } else if (document.body.clientWidth > 1000 && isCollapse.value) {
+    globalStore.changeCollapse(false)
+  }
+};
+// 初始化调用
+resizeHandler();
+// beforeMount
+onBeforeMount(() => {
+  // 监听页面变化
+  useEventListener("resize", resizeHandler);
 });
+// methods
+// 隐藏菜单
+const hideMenu = () => {
+  globalStore.changeCollapse(true)
+};
 </script>
 
 <style lang="scss" scoped>
@@ -102,7 +77,6 @@ export default defineComponent({
 .el-aside {
   display: flex;
   flex-direction: column;
-  transition: 0.2s;
   overflow-x: hidden;
   transition: 0.3s;
   &::-webkit-scrollbar {

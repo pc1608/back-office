@@ -14,77 +14,47 @@
   </Layer>
 </template>
 
-<script lang="js">
+<script lang="js" setup>
 import { defineComponent, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { useStore } from 'vuex'
-import { passwordChange } from '@/api/user'
 import Layer from '@/components/layer/index.vue'
-export default defineComponent({
-  components: {
-    Layer
-  },
-  props: {
-    layer: {
-      type: Object,
-      default: () => {
-        return {
-          show: false,
-          title: '',
-          showButton: true
-        }
+const props = defineProps({
+  layer: {
+    type: Object,
+    default: () => {
+      return {
+        show: false,
+        title: '',
       }
-    }
-  },
-  setup(props, ctx) {
-    const ruleForm = ref(null)
-    const layerDom = ref(null)
-    const store = useStore()
-    let form = ref({
-      userId: '123465',
-      name: '',
-      old: '',
-      new: ''
-    })
-    const rules = {
-      old: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
-      new: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
-    }
-    function submit() {
-      if (ruleForm.value) {
-        ruleForm.value.validate((valid) => {
-          if (valid) {
-            let params = {
-              id: form.value.userId,
-              old: form.value.old,
-              new: form.value.new
-            }
-            passwordChange(params)
-            .then(res => {
-              ElMessage({
-                type: 'success',
-                message: '密码修改成功，即将跳转到登录页面'
-              })
-              layerDom.value && layerDom.value.close()
-              setTimeout(() => {
-                store.dispatch('user/loginOut')
-              }, 2000)
-            })
-          } else {
-            return false;
-          }
-        });
-      }
-    }
-    return {
-      form,
-      rules,
-      layerDom,
-      ruleForm,
-      submit
     }
   }
 })
+const ruleForm = ref(null)
+const layerDom = ref(null)
+let form = ref({
+  userId: '123465',
+  name: '',
+  old: '',
+  new: ''
+})
+const rules = {
+  old: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
+  new: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
+}
+function submit() {
+  if (ruleForm.value) {
+    ruleForm.value.validate((valid) => {
+      if (valid) {
+        let params = {
+          id: form.value.userId,
+          old: form.value.old,
+          new: form.value.new
+        }
+      } else {
+        return false;
+      }
+    });
+  }
+}
 </script>
 
 <style lang="scss" scoped>

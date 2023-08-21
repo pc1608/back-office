@@ -1,41 +1,33 @@
 <template>
-  <component :is="type" v-bind="linkProps(to)" @click="hideMenu" >
+  <component is="router-link" v-bind="linkProps(to)" @click="hideMenu" >
     <slot></slot>
   </component>
 </template>
 
-<script lang="js">
+<script lang="js" setup>
 import { defineComponent, computed } from 'vue'
-import { useStore } from "vuex";
-export default defineComponent({
-  name: 'appLink',
-  props: {
-    to: {
-      type: String,
-      required: true
-    }
-  },
-  setup(props) {
-    const store = useStore();
-    const isCollapse = computed(() => store.state.app.isCollapse);
-    const linkProps = (to) => {
-     return {
-       to: to
-     } 
-    }
-    const hideMenu = () => {
-      if (document.body.clientWidth <= 1000 && !isCollapse.value) {
-        store.commit("app/isCollapseChange", true);
-      }
-    };
-    return {
-      type: "router-link",
-      linkProps,
-      hideMenu
-    }
+import {useGlobalStore} from "@/stores/modules/global";
+import {useMenuStore} from "@/stores/modules/menu";
+const props = defineProps({
+  to: {
+    type: String,
+    required:true
   }
 })
+const store = useGlobalStore();
+const menuStore = useMenuStore()
+const isCollapse = computed(() => store.isCollapse);
+const linkProps = (to) => {
+  return {
+    to: to
+  }
+}
+const hideMenu = () => {
+  if (document.body.clientWidth <= 1000 && !isCollapse.value) {
+    store.changeCollapse(true)
+  }
+};
 </script>
 <style lang="">
-  
+
 </style>

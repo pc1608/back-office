@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  $END$
+  <h1>员工</h1>
 </template>
 
 <style scoped lang="scss">
