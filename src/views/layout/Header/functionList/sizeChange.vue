@@ -18,36 +18,20 @@
   </el-dropdown>
 </template>
 
-<script lang="js">
+<script lang="js" setup>
 import { defineComponent, computed, unref } from 'vue'
 import { useRoute } from 'vue-router'
-import { useStore } from 'vuex'
-export default defineComponent({
-  setup() {
-    const store = useStore()
-    const route = useRoute()
-    const elementSize = computed(() => store.state.app.elementSize)
-    const list = [
-      { size: 'large', name: '大' },
-      { size: 'default', name: '默认' },
-      { size: 'small', name: '小' },
-    ]
-    const { fullPath } = unref(route)
-    return {
-      list,
-      elementSize,
-      fullPath
-    }
-  },
-  methods: {
-    handleCommand(command) {
-      this.$store.commit('app/stateChange', {
-        name: 'elementSize',
-        value: command
-      })
-    },
-  }
-})
+import {useGlobalStore} from "@/stores/modules/global";
+const globalStore = useGlobalStore()
+const elementSize = computed(() => globalStore.elementSize)
+const list = [
+  { size: 'large', name: '大' },
+  { size: 'default', name: '默认' },
+  { size: 'small', name: '小' },
+]
+const handleCommand = (command)=>{
+  globalStore.changeSize(command)
+}
 </script>
 
 <style lang="scss" scoped>

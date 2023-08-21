@@ -4,20 +4,11 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { defineComponent } from 'vue'
 import { useFullscreen } from '@vueuse/core'
 
-export default defineComponent({
-  name: 'fullscreen',
-  setup() {
-    const { isFullscreen, toggle } = useFullscreen()
-    return {
-      isFullscreen,
-      toggle
-    }
-  }
-})
+const { isFullscreen, toggle } = useFullscreen()
 </script>
 
 <style lang="scss" scoped>

@@ -1,54 +1,57 @@
 <template>
-  <div class="tags-view-item" :class="active? 'active' : ''">
-    <router-link :to="{ path: menu.path, query: menu.query }" v-if="menu.meta.title">
-      {{ menu.meta.title }}
+  <div class="tags-view-item" :class="active ? 'active' : ''" v-if="menu1.path!=='/dashboard'&&menu1.path!=='/'">
+    <router-link :to="{ path: menu1.path, query: menu1.query }" v-if="menu1.meta.title">
+      {{ menu1.meta.title }}
     </router-link>
     <el-icon @click.stop="reload" v-if="active"><refresh-right /></el-icon>
-    <el-icon @click.stop="closeTab" v-if="!menu.meta.hideClose" alt="del"><close /></el-icon>
+    <el-icon @click.stop="closeTab" v-if="!menu1.meta.hideClose" alt="del"><close /></el-icon>
   </div>
 </template>
 
-<script lang="js">
-import { defineComponent } from 'vue'
-import { RefreshRight, Close } from '@element-plus/icons'
-import { isBackMenu } from '@/config'
-export default defineComponent({
-  props: {
-    menu: {
-      type: Object,
-      default: () => {
-        return {
-          path: '',
-          meta: {
-            label: '',
-            hideClose: false
-          }
-        }
+<script lang="js" setup>
+import { onMounted,defineProps,toRef } from 'vue'
+import { RefreshRight, Close } from '@element-plus/icons-vue'
+import {onBeforeRouteUpdate} from "vue-router";
+const props = defineProps({
+  menu: {
+    type: Object,
+    default: () => {
+      return {
+        path: '',
+        meta: {
+          label: '',
+          hideClose: false,
+        },
       }
     },
-    active: {
-      type: Boolean,
-      default: false
-    }
   },
-  components: {
-    RefreshRight,
-    Close
-  },
-  setup(props, { emit }) {
-    // 关闭按钮
-    function closeTab() {
-      emit('close')
-    }
-    // 刷新按钮
-    function reload() {
-      emit('reload')
-    }
-    return {
-      closeTab,
-      reload,
-      isBackMenu
-    }
+  active: {
+    type: Boolean,
+    default: false
+  }
+})
+const active = toRef(props.active)
+console.log("active",active.value)
+const menu1 = props.menu
+const emit = defineEmits(['close', 'reload'])
+function closeTab() {
+  emit('close')
+}
+// 刷新按钮
+function reload() {
+  emit('reload')
+}
+onMounted(()=>{
+  console.log("menu1231",menu1)
+  console.log("actibe",active)
+})
+onBeforeRouteUpdate((to)=>{
+  console.log(to)
+  if (menu1.path===to.path){
+    active.value = true
+  }
+  else {
+    active.value = false
   }
 })
 </script>

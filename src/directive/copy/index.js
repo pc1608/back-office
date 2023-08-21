@@ -17,9 +17,9 @@ const directive = {
   }
 }
 
-function handleClick(this, ev) {
+function handleClick(thi , ev) {
   let input = document.createElement('input')
-  input.value = this.copyData.toLocaleString()
+  input.value = thi.copyData.toLocaleString()
   document.body.appendChild(input)
   input.select()
   document.execCommand('Copy')

@@ -108,7 +108,7 @@ async function handleElShow(el) {
       handlePosition()
     }  
   }
-  function mouseUp(e) {
+  function mouseUp() {
     dialogMask.style.userSelect = "auto"
     dragStatus = false
   }
@@ -116,7 +116,7 @@ async function handleElShow(el) {
     // dialog.style.cssText += 'position: static';
   }
   function myPromise() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       setTimeout(() => {
         resolve()
       }, 500)

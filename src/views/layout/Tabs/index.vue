@@ -1,6 +1,6 @@
 <template>
   <div class="tabs">
-    <el-scrollbar
+    <div
       class="scroll-container tags-view-container"
       ref="scrollbarDom"
       @wheel.passive="handleWhellScroll"
@@ -14,7 +14,7 @@
         @close="delMenu(menu)"
         @reload="pageReload"
       />
-    </el-scrollbar>
+    </div>
     <div class="handle">
       <div id="vueAdminBoxTabRefresh" @click="pageReload"></div>
       <div id="vueAdminBoxTabCloseSelf" @click="closeCurrentRoute"></div>
@@ -40,209 +40,188 @@
   </div>
 </template>
 
-<script lang="js">
+<script lang="js" setup>
 /** 引用vue系列函数 */
-import { defineComponent, computed, unref, watch, reactive, ref, nextTick } from 'vue'
-import { useStore } from 'vuex'
-import { useRoute, useRouter } from 'vue-router'
+import {computed, reactive, ref, watch} from 'vue'
+import tabsHook from "@/views/layout/Tabs/tabsHook";
+import {useRoute, useRouter} from 'vue-router'
 
 /** 引用图标 */
-import { ArrowDown, RefreshLeft, CircleClose, FullScreen } from '@element-plus/icons'
+import {ArrowDown, CircleClose, FullScreen, RefreshLeft} from '@element-plus/icons-vue'
+import {useGlobalStore} from "@/stores/modules/global";
+import Item from "@/views/layout/Tabs/item.vue";
 
-import Item from './item.vue'
-import tabsHook from './tabsHook'
 
-export default defineComponent({
-  components: {
-    Item, ArrowDown, FullScreen
-  },
-  setup() {
-    const store = useStore()
-    const route = useRoute()
-    const router = useRouter()
-    const scrollbarDom = ref(null)
-    const scrollLeft = ref(0)
-    const defaultMenu = {
-      path: '/dashboard',
-      meta: { title: '首页', hideClose: true }
-    }
-    const contentFullScreen = computed(() => store.state.app.contentFullScreen)
-    const currentDisabled = computed(() => route.path === defaultMenu.path)
+const globalStore = useGlobalStore()
+const route = useRoute()
+const router = useRouter()
+const scrollbarDom = ref(null)
+const scrollLeft = ref(0)
+const defaultMenu = {
+  path: '/',
+  meta: { title: '首页', hideClose: true }
+}
+const contentFullScreen = computed(() => globalStore.maxSize)
+const currentDisabled = computed(() => route.path === defaultMenu.path)
 
-    let activeMenu = reactive({ path: '' })
-    let menuList = ref(tabsHook.getItem())
-    if (menuList.value.length === 0) { // 判断之前有没有调用过
-      addMenu(defaultMenu)
-    }
-    watch(menuList.value, (newVal) => {
-      tabsHook.setItem(newVal)
-    })
-    watch(menuList, (newVal) => {
-      tabsHook.setItem(newVal)
-    })
-    router.afterEach(() => {
-      addMenu(route)
-      initMenu(route)
-    })
-
-    // 全屏
-    function onFullscreen() {
-      store.commit('app/contentFullScreenChange', !contentFullScreen.value)
-    }
-    // 当前页面组件重新加载
-    function pageReload() {
-      const self = route.matched[route.matched.length-1].instances.default
-
-      self.handleReload();
-    }
-
-    // 关闭当前标签，首页不关闭
-    function closeCurrentRoute() {
-      if (route.path !== defaultMenu.path) {
-        const tab = document.getElementById('vueAdminBoxTabCloseSelf')
-        const nextPath = tab?.getAttribute('nextPath')
-        delMenu(route, nextPath)
-      }
-    }
-    // 关闭除了当前标签之外的所有标签
-    function closeOtherRoute() {
-      menuList.value = [defaultMenu]
-      if (route.path !== defaultMenu.path) {
-        addMenu(route)
-      }
-      setKeepAliveData()
-    }
-
-    // 关闭所有的标签，除了首页
-    function closeAllRoute() {
-      menuList.value = [defaultMenu]
-      setKeepAliveData()
-      router.push(defaultMenu.path)
-    }
-
-    // 添加新的菜单项
-    function addMenu(menu) {
-      let { path, meta, name, query } = menu
-      if (meta.hideTabs) {
-        return
-      }
-      let hasMenu = menuList.value.some((obj) => {
-        return obj.path === path
-      })
-      if (!hasMenu) {
-        menuList.value.push({
-          path,
-          meta,
-          name,
-          query
-        })
-      }
-    }
-
-    // 删除菜单项
-    function delMenu(menu, nextPath) {
-      let index = 0
-      if (!menu.meta.hideClose) {
-        if (menu.meta.cache && menu.name) {
-          store.commit('keepAlive/delKeepAliveComponentsName', menu.name)
-        }
-        index = menuList.value.findIndex((item) => item.path === menu.path)
-        menuList.value.splice(index, 1)
-      }
-      if (nextPath) {
-        router.push(nextPath)
-        return
-      }
-      // 若删除的是当前页面，回到前一页，若为最后一页，则回到默认的首页
-      if (menu.path === activeMenu.path) {
-        const prePage = index - 1 > 0 ? menuList.value[index - 1] : { path: defaultMenu.path }
-        router.push({ path: prePage.path, query: prePage.query || {} })
-      }
-    }
-
-    // 初始化activeMenu
-    function initMenu(menu) {
-      activeMenu = menu
-      nextTick(() => {
-        setPosition()
-      })
-    }
-    /** 设置当前滚动条应该在的位置 */
-    function setPosition() {
-      if (scrollbarDom.value) {
-        const domBox = {
-          scrollbar: scrollbarDom.value.wrapRef,
-          activeDom: scrollbarDom.value.wrapRef.querySelector('.active'),
-          activeFather: scrollbarDom.value.wrapRef.querySelector('.el-scrollbar__view')
-        }
-        let hasDoms = true
-        Object.keys(domBox).forEach((dom) => {
-          if (!dom) {
-            hasDoms = false
-          }
-        })
-        if (!hasDoms) {
-          return
-        }
-        const domData = {
-          scrollbar: domBox.scrollbar.getBoundingClientRect(),
-          activeDom: domBox.activeDom.getBoundingClientRect(),
-          activeFather: domBox.activeFather.getBoundingClientRect()
-        }
-        const num = domData.activeDom.x - domData.activeFather.x + 1/2 * domData.activeDom.width - 1/2 * domData.scrollbar.width
-        domBox.scrollbar.scrollLeft = num
-      }
-    }
-
-    // 配置需要缓存的数据
-    function setKeepAliveData() {
-      let keepAliveNames = []
-      menuList.value.forEach((menu) => {
-        menu.meta && menu.meta.cache && menu.name && keepAliveNames.push(menu.name)
-      })
-      store.commit('keepAlive/setKeepAliveComponentsName', keepAliveNames)
-    }
-
-    /** 监听鼠标滚动事件 */
-    function handleWhellScroll(e) {
-      let distance = 0
-      let speed = 5
-      if (e.wheelDelta > 30) {
-        distance = -10
-      } else if (e.wheelDelta < -30) {
-        distance = 10
-      }
-      // console.log(scrollLeft.value + eventDelta / 4)
-      scrollbarDom.value?.setScrollLeft(scrollLeft.value + distance * speed)
-    }
-
-    /** 监听滚动事件 */
-    function handleScroll({ scrollLeft: left }) {
-      scrollLeft.value = left
-    }
-
-    // 初始化时调用：1. 新增菜单 2. 初始化activeMenu
-    addMenu(route)
-    initMenu(route)
-    return {
-      RefreshLeft, CircleClose,
-      contentFullScreen,
-      scrollbarDom,
-      // 菜单相关
-      menuList,
-      activeMenu,
-      currentDisabled,
-      onFullscreen,
-      pageReload,
-      delMenu,
-      closeCurrentRoute,
-      closeOtherRoute,
-      closeAllRoute,
-      handleScroll,
-      handleWhellScroll
-    }
-  }
+let activeMenu = reactive({ path: '' })
+let menuList = ref(tabsHook.getItem())
+console.log("list",menuList.value)
+if (menuList.value.length === 0) { // 判断之前有没有调用过
+  addMenu(defaultMenu)
+}
+watch(menuList.value, (newVal) => {
+  console.log("list",menuList.value)
+  tabsHook.setItem(newVal)
 })
+watch(menuList, (newVal) => {
+  tabsHook.setItem(newVal)
+})
+router.afterEach(() => {
+  addMenu(route)
+  initMenu(route)
+})
+
+// 全屏
+function onFullscreen() {
+  globalStore.changeMaxSize()
+}
+// 当前页面组件重新加载
+function pageReload() {
+  const self = route.matched[route.matched.length-1].instances.default
+  console.log("self",self)
+  // self.handleReload();
+  globalStore.toggleActive()
+}
+
+// 关闭当前标签，首页不关闭
+function closeCurrentRoute() {
+  if (route.path !== defaultMenu.path) {
+    const tab = document.getElementById('vueAdminBoxTabCloseSelf')
+    const nextPath = tab?.getAttribute('nextPath')
+    delMenu(route, nextPath)
+  }
+}
+// 关闭除了当前标签之外的所有标签
+function closeOtherRoute() {
+  menuList.value = [defaultMenu]
+  if (route.path !== defaultMenu.path) {
+    addMenu(route)
+  }
+  setKeepAliveData()
+}
+
+// 关闭所有的标签，除了首页
+function closeAllRoute() {
+  menuList.value = [defaultMenu]
+  setKeepAliveData()
+  router.push(defaultMenu.path)
+}
+
+// 添加新的菜单项
+function addMenu(menu) {
+  let { path, meta, name, query } = menu
+  if (meta.hideTabs) {
+    return
+  }
+  let hasMenu = menuList.value.some((obj) => {
+    return obj.path === path
+  })
+  if (!hasMenu) {
+    menuList.value.push({
+      path,
+      meta,
+      name,
+      query
+    })
+  }
+}
+
+// 删除菜单项
+function delMenu(menu, nextPath) {
+  let index = 0
+  if (!menu.meta.hideClose) {
+    if (menu.meta.cache && menu.name) {
+      store.commit('keepAlive/delKeepAliveComponentsName', menu.name)
+    }
+    index = menuList.value.findIndex((item) => item.path === menu.path)
+    menuList.value.splice(index, 1)
+  }
+  if (nextPath) {
+    router.push(nextPath)
+    return
+  }
+  // 若删除的是当前页面，回到前一页，若为最后一页，则回到默认的首页
+  if (menu.path === activeMenu.path) {
+    const prePage = index - 1 > 0 ? menuList.value[index - 1] : { path: defaultMenu.path }
+    router.push({ path: prePage.path, query: prePage.query || {} })
+  }
+}
+
+// 初始化activeMenu
+function initMenu(menu) {
+  activeMenu = menu
+  // nextTick(() => {
+  //   setPosition()
+  // })
+}
+/** 设置当前滚动条应该在的位置 */
+// function setPosition() {
+//   if (scrollbarDom.value) {
+//     const domBox = {
+//       scrollbar: scrollbarDom.value.wrapRef,
+//       activeDom: document.querySelector('.active'),
+//       activeFather: document.querySelector('.el-scrollbar__view')
+//     }
+//     let hasDoms = true
+//     Object.keys(domBox).forEach((dom) => {
+//       if (!dom) {
+//         hasDoms = false
+//       }
+//     })
+//     if (!hasDoms) {
+//       return
+//     }
+//     const domData = {
+//       scrollbar: domBox.scrollbar.getBoundingClientRect(),
+//       activeDom: domBox.activeDom.getBoundingClientRect(),
+//       activeFather: domBox.activeFather.getBoundingClientRect()
+//     }
+//     domBox.scrollbar.scrollLeft = domData.activeDom.x - domData.activeFather.x + 1 / 2 * domData.activeDom.width - 1 / 2 * domData.scrollbar.width
+//   }
+// }
+
+// 配置需要缓存的数据
+function setKeepAliveData() {
+  let keepAliveNames = []
+  menuList.value.forEach((menu) => {
+    menu.meta && menu.meta.cache && menu.name && keepAliveNames.push(menu.name)
+  })
+  // store.commit('keepAlive/setKeepAliveComponentsName', keepAliveNames)
+}
+
+/** 监听鼠标滚动事件 */
+function handleWhellScroll(e) {
+  let distance = 0
+  let speed = 5
+  if (e.wheelDelta > 30) {
+    distance = -10
+  } else if (e.wheelDelta < -30) {
+    distance = 10
+  }
+  // console.log(scrollLeft.value + eventDelta / 4)
+  scrollbarDom.value?.setScrollLeft(scrollLeft.value + distance * speed)
+}
+
+/** 监听滚动事件 */
+function handleScroll({ scrollLeft: left }) {
+  scrollLeft.value = left
+}
+
+// 初始化时调用：1. 新增菜单 2. 初始化activeMenu
+addMenu(route)
+initMenu(route)
+
 </script>
 
 <style lang="scss" scoped>
@@ -280,7 +259,7 @@ export default defineComponent({
     overflow: hidden;
     width: 100%;
     :deep(.el-scrollbar__bar) {
-      bottom: 0px;
+      bottom: 0;
     }
     :deep(.el-scrollbar__wrap) {
       height: 49px;

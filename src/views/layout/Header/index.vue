@@ -35,56 +35,39 @@
   </header>
 </template>
 
-<script lang="js">
-import { defineComponent, computed, reactive } from 'vue'
-import { useStore } from 'vuex'
+<script lang="js" setup>
 import { useRouter, useRoute } from 'vue-router'
+import { ref } from 'vue'
+import {computed} from "vue"
 import FullScreen from './functionList/fullscreen.vue'
 import SizeChange from './functionList/sizeChange.vue'
 import Github from './functionList/github.vue'
 import Theme from './functionList/theme.vue'
 import Breadcrumb from './Breadcrumb.vue'
 import PasswordLayer from './passwordLayer.vue'
-export default defineComponent({
-  components: {
-    FullScreen,
-    Breadcrumb,
-    SizeChange,
-    Github,
-    Theme,
-    PasswordLayer
-  },
-  setup() {
-    const store = useStore()
-    const router = useRouter()
-    const route = useRoute()
-    const layer = reactive({
-      show: false,
-      showButton: true
-    })
-    const isCollapse = computed(() => store.state.app.isCollapse)
-    // isCollapse change to hide/show the sidebar
-    const opendStateChange = () => {
-      store.commit('app/isCollapseChange', !isCollapse.value)
-    }
-
-    // login out the system
-    const loginOut = () => {
-      store.dispatch('user/loginOut')
-    }
-    
-    const showPasswordLayer = () => {
-      layer.show = true
-    }
-    return {
-      isCollapse,
-      layer,
-      opendStateChange,
-      loginOut,
-      showPasswordLayer
-    }
-  }
+import {useGlobalStore} from "@/stores/modules/global";
+const router = useRouter()
+const route = useRoute()
+const globalStore = useGlobalStore()
+const layer = ref({
+  show: false,
+  showButton: true
 })
+const isCollapse = computed(()=>globalStore.isCollapse)
+// isCollapse change to hide/show the sidebar
+const opendStateChange = () => {
+  globalStore.toggleCollapse()
+  console.log("isCollapse1",isCollapse.value)
+}
+
+// login out the system
+const loginOut = () => {
+
+}
+
+const showPasswordLayer = () => {
+  layer.value.show = true
+}
 </script>
 
 <style lang="scss" scoped>
